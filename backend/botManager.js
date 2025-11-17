@@ -23,42 +23,62 @@ class BotInstance {
       // Login via IMVU Client API
       await this.client.login(this.username, this.password);
       
-      // Get IMQ connection info from user data
-      const userData = await this.client.request('/login/me');
-      const imqUrl = userData.denormalized[userData.id]?.relations?.imq;
-      
-      if (!imqUrl) {
-        throw new Error('Could not get IMQ URL from user data');
-      }
-
-      // Initialize IMQ Manager for real-time chat
-      this.imqManager = new IMQManager({
-        url: imqUrl,
-        strategies: [
-          new IMQWebSocketConnectionStrategy({
-            url: imqUrl,
-            socketFactory: (await import('ws')).default
-          })
-        ],
-        userId: this.client.account.user.legacy_cid || this.client.account.id,
-        sessionId: this.client.sauce,
-        metadata: {
-          app: 'imvu_next',
-          platform_type: 'big'
-        }
-      });
-
-      // Connect to IMQ
-      await this.imqManager.connect();
-      
       this.isLoggedIn = true;
       console.log(`[Bot ${this.id}] Successfully logged in as ${this.username}`);
+      
+      // Try to initialize real-time messaging (IMQ) - optional on Vercel
+      const disableIMQ = process.env.DISABLE_IMQ === 'true';
+      
+      if (disableIMQ) {
+        console.log(`[Bot ${this.id}] IMQ disabled via DISABLE_IMQ flag (Vercel deployment)`);
+      } else {
+        try {
+          // Get IMQ connection info from user data
+          const userData = await this.client.request('/login/me');
+          const imqUrl = userData.denormalized[userData.id]?.relations?.imq;
+          
+          if (!imqUrl) {
+            console.warn(`[Bot ${this.id}] No IMQ URL found - real-time features disabled`);
+          } else {
+            // Initialize IMQ Manager for real-time chat
+            this.imqManager = new IMQManager({
+              url: imqUrl,
+              strategies: [
+                new IMQWebSocketConnectionStrategy({
+                  url: imqUrl,
+                  socketFactory: (await import('ws')).default
+                })
+              ],
+              userId: this.client.account.user.legacy_cid || this.client.account.id,
+              sessionId: this.client.sauce,
+              metadata: {
+                app: 'imvu_next',
+                platform_type: 'big'
+              }
+            });
+
+            // Connect to IMQ with timeout
+            await Promise.race([
+              this.imqManager.connect(),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('IMQ connection timeout')), 10000)
+              )
+            ]);
+            
+            console.log(`[Bot ${this.id}] IMQ connected - real-time features enabled`);
+          }
+        } catch (imqError) {
+          console.warn(`[Bot ${this.id}] IMQ connection failed (${imqError.message}) - continuing without real-time features`);
+          this.imqManager = null;
+        }
+      }
       
       return {
         success: true,
         botId: this.id,
         username: this.client.account.username,
-        userId: this.client.account.id
+        userId: this.client.account.id,
+        realtimeEnabled: !!this.imqManager
       };
     } catch (error) {
       console.error(`[Bot ${this.id}] Login failed:`, error.message);
@@ -69,6 +89,10 @@ class BotInstance {
   async joinRoom(roomIdentifier) {
     if (!this.isLoggedIn) {
       throw new Error('Bot is not logged in');
+    }
+
+    if (!this.imqManager) {
+      throw new Error('Real-time features not available (IMQ not connected). Deploy backend with persistent WebSocket support.');
     }
 
     try {
@@ -187,6 +211,10 @@ class BotInstance {
   async sendMessage(roomId, text) {
     if (!this.currentRooms.has(roomId)) {
       throw new Error(`Not in room: ${roomId}`);
+    }
+
+    if (!this.imqManager) {
+      throw new Error('Real-time features not available (IMQ not connected)');
     }
 
     try {

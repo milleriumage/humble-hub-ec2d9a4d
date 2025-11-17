@@ -1,5 +1,15 @@
 # Deploy do Backend no Vercel
 
+## ⚠️ LIMITAÇÃO IMPORTANTE: Recursos de Tempo Real Desabilitados
+
+O Vercel **não suporta WebSockets persistentes**. Isso significa:
+- ✅ **Login funciona** - Autenticação completa
+- ✅ **Buscar salas funciona** - Pesquisa de salas
+- ❌ **Entrar em salas NÃO funciona** - Requer WebSocket persistente
+- ❌ **Mensagens em tempo real NÃO funcionam** - Chat desabilitado
+
+**Para recursos completos (salas + tempo real)**: Use Railway, Render, ou ngrok local (veja `VERCEL_LIMITATIONS.md`).
+
 ## ⚠️ Nota sobre erros TypeScript
 Os erros TypeScript exibidos são do SDK `imvu.js-master` e **não afetam** o funcionamento do backend. O backend roda com JavaScript puro (`node server.js`) e funciona perfeitamente.
 
