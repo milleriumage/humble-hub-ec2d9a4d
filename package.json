@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
 	  
-	  "start": "backend/node server.js",
+	  "start": "backend/server.js",
 	  "dev": "vite",
 	  "build": "vite build",
     "build:dev": "vite build --mode development",
