@@ -3,11 +3,12 @@ services:
     name: imvu-bot-backend
     runtime: node
     plan: free
-    rootDir: backend
-    buildCommand: npm install --omit=dev
-    startCommand: node server.js
+   buildCommand: npm install && npm run build
+    startCommand: node backend/server.js
     envVars:
       - key: NODE_VERSION
         value: 20.11.0
       - key: DISABLE_IMQ
         value: true
+        
+      
