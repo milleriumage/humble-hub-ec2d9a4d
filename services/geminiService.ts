@@ -1,15 +1,14 @@
-import { GoogleGenAI } from "@google/genai";
 import { AIPersonality, Message, AIProvider, Bot } from '../types';
 
-// IMPORTANT: This is a placeholder for the real API key.
-// In a real application, this should be handled securely.
-const DUMMY_API_KEY = "YOUR_API_KEY_HERE";
-if (!process.env.API_KEY) {
-  // @ts-ignore
-  process.env.API_KEY = DUMMY_API_KEY;
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Get backend URL from environment or localStorage
+const getBackendUrl = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('BACKEND_URL') || 
+           (import.meta.env as any).VITE_BACKEND_URL || 
+           'http://localhost:3001';
+  }
+  return 'http://localhost:3001';
+};
 
 const generatePrompt = (personality: AIPersonality, history: Message[], botName: string): string => {
     const historyText = history
@@ -44,26 +43,36 @@ export const generateBotResponse = async (
 ): Promise<string> => {
     const mockResponses = ["lol that's funny", "idk", "cool", "what do you mean?", "nice outfit!"];
 
-    if (provider === 'gpt' || !process.env.API_KEY || process.env.API_KEY === DUMMY_API_KEY) {
-        if(provider === 'gemini') console.warn("Gemini API key is not set. Using mock response.");
+    if (provider === 'gpt') {
         await new Promise(res => setTimeout(res, 500 + Math.random() * 500));
         return mockResponses[Math.floor(Math.random() * mockResponses.length)];
     }
     
-    const prompt = generatePrompt(personality, history, botName);
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
+        const response = await fetch(`${getBackendUrl()}/generate-response`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                personality,
+                history,
+                botName,
+                provider
+            }),
         });
 
-        const text = response.text.trim();
-        // Post-process to ensure it's a single line chat message
-        return text.split('\n')[0] || mockResponses[0];
+        if (!response.ok) {
+            console.warn('Backend API error, using mock response');
+            return mockResponses[Math.floor(Math.random() * mockResponses.length)];
+        }
+
+        const data = await response.json();
+        return data.message || mockResponses[0];
 
     } catch (error) {
-        console.error("Error generating Gemini response:", error);
-        return "I'm not sure what to say.";
+        console.error("Error generating response:", error);
+        return mockResponses[Math.floor(Math.random() * mockResponses.length)];
     }
 };
 

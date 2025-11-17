@@ -267,6 +267,25 @@ app.post('/bots/:botId/rooms/:roomId/send', async (req, res) => {
   }
 });
 
+// Generate AI response
+app.post('/generate-response', async (req, res) => {
+  try {
+    const { personality, history, botName, provider } = req.body;
+    
+    const mockResponses = ["lol that's funny", "idk", "cool", "what do you mean?", "nice outfit!"];
+    
+    // For now, return mock responses
+    // TODO: Add Gemini API integration with GEMINI_API_KEY environment variable
+    await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
+    const message = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+    
+    res.json({ success: true, message });
+  } catch (error) {
+    console.error('[API] Generate response error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Logout bot
 app.post('/bots/:botId/logout', async (req, res) => {
   try {
