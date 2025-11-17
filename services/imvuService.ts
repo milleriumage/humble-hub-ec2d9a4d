@@ -98,11 +98,13 @@ class ImvuService {
         }
 
         if (!this.BACKEND_URL) {
-            this.log(`[${username}] Backend URL not configured.`);
+            this.log(`[ERROR] Backend URL not configured! Set it in Settings page.`);
+            this.log(`Current backend URL: ${this.BACKEND_URL || 'NOT SET'}`);
             return false;
         }
 
         try {
+            this.log(`[${username}] Connecting to backend: ${this.BACKEND_URL}`);
             this.log(`[${username}] Attempting to login via backend...`);
             
             const response = await fetch(`${this.BACKEND_URL}/login`, {
@@ -113,7 +115,10 @@ class ImvuService {
                 body: JSON.stringify({ username, password })
             });
 
+            this.log(`[${username}] Backend response status: ${response.status}`);
+            
             const data = await response.json();
+            this.log(`[${username}] Backend response: ${JSON.stringify(data)}`);
 
             if (!response.ok || !data.success) {
                 this.log(`[${username}] Login failed: ${data.error || 'Unknown error'}`);
@@ -123,7 +128,9 @@ class ImvuService {
             this.log(`[${username}] Successfully logged in!`);
             return true;
         } catch (error: any) {
-            this.log(`[${username}] Login failed: ${error.message}. Is the backend running?`);
+            this.log(`[${username}] ERROR: ${error.message}`);
+            this.log(`[ERROR] Failed to connect to backend at: ${this.BACKEND_URL}`);
+            this.log(`[ERROR] Make sure backend is running and URL is correct in Settings.`);
             console.error('Login error:', error);
             return false;
         }

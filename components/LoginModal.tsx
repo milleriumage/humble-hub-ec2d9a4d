@@ -33,11 +33,22 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, botName, onLogin
     }, [isOpen]);
 
     const handleLogin = async () => {
+        if (!username.trim() || !password.trim()) {
+            setError('Username and password are required');
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
-        const success = await onLogin(username, password);
-        if (!success) {
-            setError('Login failed. Please check credentials.');
+        
+        try {
+            const success = await onLogin(username, password);
+            if (!success) {
+                setError('Login failed. Please check your credentials and make sure backend is running.');
+                setIsLoading(false);
+            }
+        } catch (err: any) {
+            setError(err.message || 'Network error. Is the backend running?');
             setIsLoading(false);
         }
     };
