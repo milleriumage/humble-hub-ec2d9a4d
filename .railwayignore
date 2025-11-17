@@ -1,0 +1,7 @@
+# Ignore imvu.js-master source files (only compiled JS is needed)
+backend/imvu.js-master/imvu.js-master/packages/*/src
+backend/imvu.js-master/imvu.js-master/packages/*/test
+backend/imvu.js-master/imvu.js-master/packages/*/tsconfig.json
+backend/imvu.js-master/imvu.js-master/*.json
+backend/imvu.js-master/imvu.js-master/.github
+backend/imvu.js-master/imvu.js-master/docs
