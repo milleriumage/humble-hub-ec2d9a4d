@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-	  
+	  "imvu:build": "cd imvu.js-master && npm install && npm run build", // Adicione este script
 	  "start": "node backend/server.js",
 	  "dev": "vite",
 	  "build": "vite build",
